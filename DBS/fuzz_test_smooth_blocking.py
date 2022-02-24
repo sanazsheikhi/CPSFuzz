@@ -309,7 +309,6 @@ class SmoothBlockingDriver(Driver):
 
 def main():
     'main entry point'
-
     fuzz_test_gym(SmoothBlockingDriver, sys.argv[1], use_rrt=False, use_lidar=False, render_on=True)
 
 if __name__ == "__main__":

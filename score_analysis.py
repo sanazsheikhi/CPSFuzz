@@ -1,29 +1,21 @@
-import os
-import sys
+import pathlib
 import copy
-import math
-import numpy as np
 import scipy.integrate as integrate
-from scipy.stats import multivariate_normal
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 from argparse import Namespace
-import yaml
 
 
-
-
-class GaussianDistribution:
-    
+class GaussianDistribution: 
     _max_pdfs = []
     
     def __init__(self, fname):
-
-        self._crash_percents, self.incremental_scores = self.read_data(fname) 
+        self._crash_percents, self.incremental_scores = self.read_data(fname)
+        self._tool = fname
 
     
     def read_data(self, fn):
-    
+
         f = open(fn,'r')
         content = f.readlines()
         f.close() 
@@ -56,7 +48,6 @@ class GaussianDistribution:
                
 
     def _get_crash_count(self):
-
         return len(self._crash_percents)
 
     def pdfs(self, x):
@@ -67,9 +58,7 @@ class GaussianDistribution:
 
         closest =  self._crash_percents[min(range(len(self._crash_percents)), key = lambda i: abs(self._crash_percents[i]-x))]
  
-        #return norm.pdf(x, closest, 1)
-        return norm.pdf(x, closest, 1)
-        
+        return norm.pdf(x, closest, 1) 
          
 
     def pdf_integral(self, l=0):
@@ -79,6 +68,7 @@ class GaussianDistribution:
         if l != 0:
             a = copy.deepcopy(self._crash_percents[0:l])
             b = copy.deepcopy(self._crash_percents)
+
             self._crash_percents.clear()
             self._crash_percents = copy.deepcopy(a)
 
@@ -89,27 +79,22 @@ class GaussianDistribution:
             self._crash_percents = copy.deepcopy(b)
       
         return score
- 
 
-
-    def _incremental_scores(self, lb):
-    
+    def _incremental_scores(self): 
         'Plots the scores measured each 10k frames by the fuzzer'
         
         if len(self.incremental_scores) == 1 or  len(self.incremental_scores) == 0 :
             print("No incremental score received.")
             return 0
 
-
         time = list(range(0, (len(self.incremental_scores))*10000, 10000))
         
         plt.plot(time, self.incremental_scores)
         plt.xlabel('Time frames (10k unit)')
         plt.ylabel('Coverage score score') 
-        plt.title('Coverage Score improvemnt of ' + lb)
-        plt.show()
+        plt.title(f"Coverage Score improvement of {self._tool}")
+        plt.savefig(f"plots/{self._tool}_coverage_improve.png")
         
-
 
     def _max_pdf(self):
         ''
@@ -117,19 +102,23 @@ class GaussianDistribution:
             for i in range(0, 101):
                 self._max_pdfs.append(self.pdfs(i))
 
-        #print("_max_pdfs: ", self._max_pdfs)
-
         plt.plot(range(0, 101), self._max_pdfs)
-        plt.xlabel('projection of state space')
-        plt.ylabel('max score')
-        plt.title('Maximum coveragescore ')
-        plt.show()
+        plt.xlabel('Projection of State Space')
+        plt.ylabel("Max Score")
+        plt.title('Maximum Coverage Score ')
+        plt.savefig(f"plots/{self._tool}_max_coverage_score.png")
 
 
 
+def main(): 
+    """
+    args = argparse.ArgumentParser(description='Output Coverage Score Plots for Fuzz Testing Frameworks')
+    parser.add_argument("--save-plots", action='store_true', default=False, help="Save plot files to disk.")
+    parser.add_argument("--random", action='store_true')
+    """
 
-def main():
 
+    """
     print("Pleas enter the tool number:\n")
     print("1. CPSFuzz  2.Random fuzzing  3.Hypothesis  4.Atheris")
     num = int(input())
@@ -145,20 +134,22 @@ def main():
     else:
         print("Wrong tool")
         return
-
-
+    """ 
    
-    gd = GaussianDistribution(tool)
-    print("\n\n")
-    print("Total crashes: ", gd._get_crash_count())
-    print("\n\n")
-    print("score ", tool,":", gd.pdf_integral()[0])
-    print("\n\n")
-    gd._incremental_scores(tool)
-    gd._max_pdf()
+    pathlib.Path('./plots').mkdir(parents=True, exist_ok=True)
 
- 
-main()
+    for tool in [ "cpsfuzz_data", "random_data", "hypothesis_data", "atheris_data"]:
+        gd = GaussianDistribution(tool)
+
+        print(f"Total crashes: {gd._get_crash_count()} \n")
+        print(f"Score {tool}: {gd.pdf_integral()[0]} \n")
+
+        gd._incremental_scores()
+        gd._max_pdf()
+
+
+if __name__ == "__main__":
+    main()
 
 
 

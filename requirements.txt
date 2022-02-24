@@ -1,0 +1,8 @@
+atheris
+hypothesis
+scipy
+numpy
+pyyaml
+numba
+pathlib
+

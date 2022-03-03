@@ -5,4 +5,4 @@ numpy
 pyyaml
 numba
 pathlib
-
+matplotlib
